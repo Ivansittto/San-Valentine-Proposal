@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -6,13 +6,12 @@
   <title>Valentine 💘</title>
   <style>
     :root{
-      --bg: #ffffff;
       --text: #1f2937;
       --muted: #6b7280;
       --yes: #10b981;
       --no:  #ef4444;
-      --card: #ffffff;
-      --shadow: 0 14px 45px rgba(0,0,0,.12);
+      --card: rgba(255,255,255,.92);
+      --shadow: 0 14px 45px rgba(0,0,0,.18);
       --radius: 18px;
     }
 
@@ -23,10 +22,26 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      background:var(--bg);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color:var(--text);
       padding:24px;
+
+      /* ✅ Fondo */
+      background-image: var(--bg-img);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* capa oscura suave encima del fondo para que todo se lea */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.25);
+      pointer-events:none;
+      z-index:0;
     }
 
     .wrap{
@@ -36,6 +51,9 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding:22px 18px 18px;
+      position:relative;
+      z-index:1;
+      backdrop-filter: blur(6px);
     }
 
     .media{
@@ -55,6 +73,10 @@
       height:100%;
       object-fit:cover;
       display:block;
+
+      /* ✅ Transición suave cuando cambia la imagen */
+      transition: opacity .25s ease;
+      opacity: 1;
     }
 
     h1{
@@ -120,10 +142,9 @@
     .tinyNote{
       margin-top:10px;
       font-size:12px;
-      color:#9ca3af;
+      color:#6b7280;
     }
 
-    /* Para que en pantallas muy pequeñas no se rompa */
     @media (max-width: 360px){
       button{ font-size:15px; padding: 12px 14px; }
     }
@@ -148,10 +169,17 @@
   </main>
 
   <script>
-    // ✅ 1) Pega aquí tu link de imagen o GIF (debe ser URL directa)
+    // ✅ Imagen principal (antes de decir "Yes")
     const IMAGE_URL = "https://i.pinimg.com/originals/a7/4d/66/a74d6698db9cbffba75a087c1c4030bc.gif";
 
-    // ✅ 2) Textos que van saliendo cuando presionan "No"
+    // ✅ Imagen que saldrá cuando toque "Yes"
+    const IMAGE_URL_YES = "https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif"; // <-- cambia por la que quieras
+
+    // ✅ Fondo de la página (link directo)
+    const BACKGROUND_URL = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&q=80"; 
+    // Tip: puedes usar cualquier png/jpg/gif directo
+
+    // Textos cuando presionan "No"
     const NO_MESSAGES = [
       "¿Estás segura? ",
       "Piénsalo bien…",
@@ -168,8 +196,11 @@
     const yesBtn = document.getElementById("yesBtn");
     const noBtn  = document.getElementById("noBtn");
     const result = document.getElementById("result");
-    const btnRow = document.getElementById("btnRow");
 
+    // ✅ setear fondo vía CSS variable
+    document.documentElement.style.setProperty("--bg-img", `url("${BACKGROUND_URL}")`);
+
+    // Set imagen inicial
     img.src = IMAGE_URL;
 
     // Estado
@@ -177,10 +208,10 @@
     let noScale = 1;
     let yesScale = 1;
 
-    // Ajustes de “castigo” por cada click en No
-    const NO_SHRINK_STEP = 0.12;   // cuánto se reduce No cada vez
-    const YES_GROW_STEP  = 0.10;   // cuánto crece Yes cada vez
-    const MIN_NO_SCALE   = 0.22;   // mínimo tamaño de No
+    // Ajustes por click en No
+    const NO_SHRINK_STEP = 0.12;
+    const YES_GROW_STEP  = 0.10;
+    const MIN_NO_SCALE   = 0.22;
 
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
@@ -190,31 +221,36 @@
     }
 
     function nudgeNoButton(){
-      // Mueve un poquito el botón No (opcional). Descomenta si lo quieres más “trampa”.
-      const max = 18; // px
+      const max = 18;
       const dx = (Math.random()*2 - 1) * max;
       const dy = (Math.random()*2 - 1) * max;
       noBtn.style.translate = `${dx}px ${dy}px`;
     }
 
+    function swapMainImage(newUrl){
+      // Fade out -> cambia src -> fade in
+      img.style.opacity = "0";
+      setTimeout(() => {
+        img.src = newUrl;
+      }, 180);
+
+      img.onload = () => {
+        img.style.opacity = "1";
+      };
+    }
+
     noBtn.addEventListener("click", () => {
       noClicks++;
 
-      // Mensaje insistente
       const msg = NO_MESSAGES[(noClicks - 1) % NO_MESSAGES.length];
       sub.textContent = msg;
 
-      // Reduce No
       noScale = clamp(noScale - NO_SHRINK_STEP, MIN_NO_SCALE, 1);
-      // Aumenta Yes
       yesScale = clamp(yesScale + YES_GROW_STEP, 1, 2.2);
 
       setButtonScales();
-
-      // (Opcional) mover No para que cueste más
       nudgeNoButton();
 
-      // Si ya está súper pequeño, bajamos opacidad
       if (noScale <= MIN_NO_SCALE + 0.02) {
         noBtn.style.opacity = "0.55";
       }
@@ -224,7 +260,10 @@
       sub.textContent = "VAMOOOOOO❤❤❤";
       result.classList.add("show");
 
-      // Bloquea botones después del sí
+      // ✅ Cambia la imagen principal por otra cuando dicen "Yes"
+      swapMainImage(IMAGE_URL_YES);
+
+      // Bloquea botones
       yesBtn.disabled = true;
       noBtn.disabled = true;
       yesBtn.style.opacity = "0.9";
@@ -233,7 +272,3 @@
   </script>
 </body>
 </html>
-
-
-
-
