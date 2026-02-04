@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Valentine 💘</title>
+  <style>
+    :root{
+      --bg: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --yes: #10b981;
+      --no:  #ef4444;
+      --card: #ffffff;
+      --shadow: 0 14px 45px rgba(0,0,0,.12);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      padding:24px;
+    }
+
+    .wrap{
+      width:min(420px, 100%);
+      text-align:center;
+      background:var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:22px 18px 18px;
+    }
+
+    .media{
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      overflow:hidden;
+      background:#f3f4f6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-bottom:14px;
+    }
+
+    .media img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    h1{
+      font-size:18px;
+      margin:10px 0 6px;
+      font-weight:700;
+    }
+
+    p{
+      margin:0 0 14px;
+      color:var(--muted);
+      font-size:14px;
+      min-height: 20px;
+    }
+
+    .btnRow{
+      position:relative;
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      align-items:center;
+      padding: 8px 0 4px;
+      min-height: 70px;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight:700;
+      font-size:16px;
+      transition: transform .18s ease, width .18s ease, height .18s ease, opacity .18s ease;
+      box-shadow: 0 10px 22px rgba(0,0,0,.10);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #yesBtn{
+      background: var(--yes);
+      color: #fff;
+      transform: scale(1);
+    }
+
+    #noBtn{
+      background: var(--no);
+      color: #fff;
+      transform: scale(1);
+      position: relative;
+    }
+
+    .result{
+      margin-top: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      display:none;
+    }
+
+    .result.show{
+      display:block;
+    }
+
+    .tinyNote{
+      margin-top:10px;
+      font-size:12px;
+      color:#9ca3af;
+    }
+
+    /* Para que en pantallas muy pequeñas no se rompa */
+    @media (max-width: 360px){
+      button{ font-size:15px; padding: 12px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="media">
+      <img id="valImg" alt="Valentine image" />
+    </div>
+
+    <h1 id="title">Will you be my valentine?</h1>
+    <p id="sub">💘</p>
+
+    <div class="btnRow" id="btnRow">
+      <button id="yesBtn" type="button">Yes</button>
+      <button id="noBtn" type="button">No</button>
+    </div>
+
+    <div class="result" id="result">¡Sabía que dirías que sí! 💖🥰</div>
+    <div class="tinyNote">Tip: cambia la imagen pegando tu link en <b>IMAGE_URL</b>.</div>
+  </main>
+
+  <script>
+    // ✅ 1) Pega aquí tu link de imagen o GIF (debe ser URL directa)
+    const IMAGE_URL = "https://i.imgur.com/yourImageOrGif.gif";
+
+    // ✅ 2) Textos que van saliendo cuando presionan "No"
+    const NO_MESSAGES = [
+      "¿Estás segura? 🥺",
+      "Piénsalo bien…",
+      "Deberías decir que sí 😭",
+      "Vamos… no me rompas el corazón 💔",
+      "Última oportunidad 😳",
+      "Ok… pero yo insisto 😤",
+      "¿Y si te digo que habrá chocolates? 🍫",
+      "Di que sí y ya 😭💘"
+    ];
+
+    const img = document.getElementById("valImg");
+    const sub = document.getElementById("sub");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn  = document.getElementById("noBtn");
+    const result = document.getElementById("result");
+    const btnRow = document.getElementById("btnRow");
+
+    img.src = IMAGE_URL;
+
+    // Estado
+    let noClicks = 0;
+    let noScale = 1;
+    let yesScale = 1;
+
+    // Ajustes de “castigo” por cada click en No
+    const NO_SHRINK_STEP = 0.12;   // cuánto se reduce No cada vez
+    const YES_GROW_STEP  = 0.10;   // cuánto crece Yes cada vez
+    const MIN_NO_SCALE   = 0.22;   // mínimo tamaño de No
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function setButtonScales(){
+      noBtn.style.transform  = `scale(${noScale})`;
+      yesBtn.style.transform = `scale(${yesScale})`;
+    }
+
+    function nudgeNoButton(){
+      // Mueve un poquito el botón No (opcional). Descomenta si lo quieres más “trampa”.
+      const max = 18; // px
+      const dx = (Math.random()*2 - 1) * max;
+      const dy = (Math.random()*2 - 1) * max;
+      noBtn.style.translate = `${dx}px ${dy}px`;
+    }
+
+    noBtn.addEventListener("click", () => {
+      noClicks++;
+
+      // Mensaje insistente
+      const msg = NO_MESSAGES[(noClicks - 1) % NO_MESSAGES.length];
+      sub.textContent = msg;
+
+      // Reduce No
+      noScale = clamp(noScale - NO_SHRINK_STEP, MIN_NO_SCALE, 1);
+      // Aumenta Yes
+      yesScale = clamp(yesScale + YES_GROW_STEP, 1, 2.2);
+
+      setButtonScales();
+
+      // (Opcional) mover No para que cueste más
+      nudgeNoButton();
+
+      // Si ya está súper pequeño, bajamos opacidad
+      if (noScale <= MIN_NO_SCALE + 0.02) {
+        noBtn.style.opacity = "0.55";
+      }
+    });
+
+    yesBtn.addEventListener("click", () => {
+      sub.textContent = "YEEEEES 💘✨";
+      result.classList.add("show");
+
+      // Bloquea botones después del sí
+      yesBtn.disabled = true;
+      noBtn.disabled = true;
+      yesBtn.style.opacity = "0.9";
+      noBtn.style.opacity = "0.35";
+    });
+  </script>
+</body>
+</html>
